@@ -116,7 +116,7 @@ export default async function MiInformacionPage() {
             const c = STATE_COLORS[state]
             return (
               <div key={state} className={`rounded-xl border border-gray-200 p-4 ${c.bg}`}>
-                <p className={`text-3xl font-bold ${c.text}`}>{stats[state] ?? 0}</p>
+                <p className={`text-3xl font-bold ${c.text}`}>{stats[state as keyof typeof stats] ?? 0}</p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
                   <p className="text-xs text-gray-500">{label}</p>

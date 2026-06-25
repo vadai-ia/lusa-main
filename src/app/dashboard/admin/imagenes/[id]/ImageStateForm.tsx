@@ -80,7 +80,7 @@ export default function ImageStateForm({ imageId, currentState, currentFraudReas
       {needsReason && (
         <div>
           <label className="block text-xs text-gray-500 mb-1">
-            Motivo {selected === 'manipulated' ? '(requerido)' : '(opcional)'}
+            Motivo {selected === 'intercambiada' ? '(requerido)' : '(opcional)'}
           </label>
           <input
             type="text"

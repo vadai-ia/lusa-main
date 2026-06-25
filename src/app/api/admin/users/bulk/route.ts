@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       continue
     }
 
-    let base  = nameToEmail(name)
+    const base = nameToEmail(name)
     let email = `${base}@hotmail.com`
     let n = 2
     while (usedEmails.has(email)) { email = `${base}${n}@hotmail.com`; n++ }

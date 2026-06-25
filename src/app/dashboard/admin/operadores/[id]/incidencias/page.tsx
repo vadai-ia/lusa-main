@@ -104,7 +104,7 @@ export default async function IncidenciasPage({
       </div>
 
       {/* Filtros */}
-      <ImagenesFilters total={rows.length} />
+      <ImagenesFilters total={rows.length} operators={[]} />
 
       {/* Tabla */}
       <div className="bg-white rounded-xl border border-gray-200">
