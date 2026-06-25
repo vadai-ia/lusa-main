@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/report/admin",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/report/operator",
+      "schedule": "0 4 * * *"
+    }
+  ]
+}
