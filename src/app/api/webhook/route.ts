@@ -257,12 +257,6 @@ export async function POST(request: NextRequest) {
     validationState = 'approved'
   }
 
-  // Sin GPS → inválida (solo si no es ya un fraude detectado)
-  if (validationState === 'approved' && gps.latitud === null) {
-    validationState = 'invalida'
-    fraudReason     = 'sin_gps'
-    console.log('[webhook] sin coordenadas GPS — imagen marcada como invalida')
-  }
 
   // 8. Subir a Supabase Storage
   const ext      = extFromMime(mimeType)
