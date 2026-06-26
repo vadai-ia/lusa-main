@@ -70,16 +70,16 @@ export async function POST(req: NextRequest) {
     }
 
     // Sync Whaapy y guardar contactId
-    syncOperadorContact(phoneSanitized, opName)
-      .then(contactId => {
-        if (contactId && newOp?.id) {
-          adminClient.schema('lusa').from('operators')
-            .update({ whaapy_contact_id: contactId })
-            .eq('id', newOp.id)
-            .then(() => console.log(`[users] whaapy_contact_id guardado: ${contactId}`))
-        }
-      })
-      .catch(e => console.error('[users] whaapy sync failed:', e))
+    const contactId = await syncOperadorContact(phoneSanitized, opName).catch(e => {
+      console.error('[users] whaapy sync failed:', e)
+      return null
+    })
+    if (contactId && newOp?.id) {
+      await adminClient.schema('lusa').from('operators')
+        .update({ whaapy_contact_id: contactId })
+        .eq('id', newOp.id)
+      console.log(`[users] whaapy_contact_id guardado: ${contactId}`)
+    }
   }
 
   // Admin con teléfono → guardar en operators para recibir reportes por WhatsApp
