@@ -41,7 +41,8 @@ async function hasOperadorTag(contactId: string): Promise<boolean> {
     const data = await res.json()
     console.log('[webhook] whaapy contact status:', res.status, JSON.stringify(data).slice(0, 300))
     if (!res.ok) return false
-    return (data.contact?.tags ?? []).includes('operador')
+    const tags = data.contact?.tags ?? []
+    return tags.includes('operador') && !tags.includes('inactivo')
   } catch (e) {
     console.error('[webhook] error consultando contacto whaapy:', e)
     return false
