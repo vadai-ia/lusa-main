@@ -9,7 +9,7 @@ const STATE_STYLES: Record<string, string> = {
   approved:        'bg-emerald-100 text-emerald-700',
   duplicate_clean: 'bg-blue-100 text-blue-700',
   intercambiada:   'bg-purple-100 text-purple-700',
-  manipulated:     'bg-purple-100 text-purple-700',
+  manipulated:     'bg-red-100 text-red-700',
   invalida:        'bg-gray-100 text-gray-600',
   invalid:         'bg-gray-100 text-gray-600',
 }
@@ -17,7 +17,7 @@ const STATE_LABELS: Record<string, string> = {
   approved:        'Aprobada',
   duplicate_clean: 'Duplicada',
   intercambiada:   'Intercambiada',
-  manipulated:     'Intercambiada',
+  manipulated:     'Manipulada',
   invalida:        'Inválida',
   invalid:         'Inválida',
 }
@@ -55,7 +55,6 @@ export default async function MisImagenesPage({ searchParams }: { searchParams: 
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function withEstado(q: any) {
-    if (estado === 'intercambiada') return q.in('validation_state', ['intercambiada', 'manipulated'])
     if (estado === 'invalida')      return q.in('validation_state', ['invalida', 'invalid'])
     if (estado) return q.eq('validation_state', estado)
     return q
@@ -69,13 +68,15 @@ export default async function MisImagenesPage({ searchParams }: { searchParams: 
     { count: total },
     { count: countAprobadas },
     { count: countDuplicadas },
+    { count: countManipuladas },
     { count: countIntercambiadas },
     { count: countInvalidas },
   ] = await Promise.all([
     dated(base()),
     dated(base().eq('validation_state', 'approved')),
     dated(base().eq('validation_state', 'duplicate_clean')),
-    dated(base().in('validation_state', ['intercambiada', 'manipulated'])),
+    dated(base().eq('validation_state', 'manipulated')),
+    dated(base().eq('validation_state', 'intercambiada')),
     dated(base().in('validation_state', ['invalida', 'invalid'])),
   ])
 
@@ -114,11 +115,12 @@ export default async function MisImagenesPage({ searchParams }: { searchParams: 
       </Suspense>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
           { label: 'Total',          value: total                ?? 0, style: 'text-gray-900' },
           { label: 'Aprobadas',      value: countAprobadas       ?? 0, style: 'text-emerald-600' },
           { label: 'Duplicadas',     value: countDuplicadas      ?? 0, style: 'text-blue-600' },
+          { label: 'Manipuladas',    value: countManipuladas     ?? 0, style: 'text-red-600' },
           { label: 'Intercambiadas', value: countIntercambiadas  ?? 0, style: 'text-purple-600' },
           { label: 'Inválidas',      value: countInvalidas       ?? 0, style: 'text-gray-500' },
         ].map(({ label, value, style }) => (

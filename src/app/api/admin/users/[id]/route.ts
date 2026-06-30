@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { syncOperadorContact, removeOperadorTag } from '@/lib/whaapy'
+import { syncOperadorContact, removeOperadorTag, addInactivoTag, removeInactivoTag } from '@/lib/whaapy'
 
 async function requireAdmin() {
   const supabase = await createClient()
@@ -19,7 +19,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { admin, user: adminUser } = ctx
 
   const { id: userId } = await params
-  const { full_name, email, password, role, phone, unit } = await req.json()
+  const { full_name, email, password, role, phone, unit, is_active } = await req.json()
 
   // Estado anterior
   const [{ data: prevProfile }, { data: prevOp }] = await Promise.all([
@@ -84,7 +84,34 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       .catch(() => {})
   }
 
-  // 4. Whaapy tags si cambió el rol
+  // 4a. Toggle is_active
+  if (is_active !== undefined && prevOp) {
+    const active = Boolean(is_active)
+    await admin.schema('lusa').from('operators').update({ is_active: active }).eq('id', prevOp.id)
+
+    if (prevOp.whaapy_contact_id) {
+      if (active) {
+        removeInactivoTag(prevOp.whaapy_contact_id).catch(() => {})
+      } else {
+        addInactivoTag(prevOp.whaapy_contact_id).catch(() => {})
+      }
+    }
+
+    await admin.schema('lusa').from('audit_log').insert({
+      image_id:         null,
+      user_id:          adminUser.id,
+      user_email:       adminUser.email!,
+      action:           active ? 'activar_contacto' : 'desactivar_contacto',
+      old_state:        String(!active),
+      new_state:        String(active),
+      old_fraud_reason: prevOp.name ?? null,
+      new_fraud_reason: null,
+    })
+
+    return NextResponse.json({ ok: true })
+  }
+
+  // 4b. Whaapy tags si cambió el rol
   const roleChanged = role && role !== prevProfile.role
   if (roleChanged && prevOp?.whaapy_contact_id) {
     if (role === 'admin') {

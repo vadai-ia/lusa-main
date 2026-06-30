@@ -48,6 +48,34 @@ export async function syncOperadorContact(phone: string, name: string): Promise<
   }
 }
 
+/** Agrega el tag "inactivo" al contacto. */
+export async function addInactivoTag(contactId: string): Promise<void> {
+  if (!process.env.WHAAPY_API_KEY) return
+  try {
+    await fetch(`${WHAAPY_BASE}/${contactId}`, {
+      method: 'PATCH',
+      headers: headers(),
+      body: JSON.stringify({ add_tags: ['inactivo'] }),
+    })
+  } catch (e) {
+    console.error('[whaapy] addInactivoTag error:', e)
+  }
+}
+
+/** Quita el tag "inactivo" del contacto. */
+export async function removeInactivoTag(contactId: string): Promise<void> {
+  if (!process.env.WHAAPY_API_KEY) return
+  try {
+    await fetch(`${WHAAPY_BASE}/${contactId}`, {
+      method: 'PATCH',
+      headers: headers(),
+      body: JSON.stringify({ remove_tags: ['inactivo'] }),
+    })
+  } catch (e) {
+    console.error('[whaapy] removeInactivoTag error:', e)
+  }
+}
+
 /** Quita el tag "operador" del contacto. */
 export async function removeOperadorTag(contactId: string): Promise<void> {
   const apiKey = process.env.WHAAPY_API_KEY

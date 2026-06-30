@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { mxDayBounds } from '@/lib/utils/dates'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -13,37 +14,77 @@ export async function GET() {
 
   const admin = createAdminClient()
 
-  const since = new Date()
-  since.setDate(since.getDate() - 29)
-  since.setHours(0, 0, 0, 0)
+  const { searchParams } = new URL(req.url)
+  const desde = searchParams.get('desde') // YYYY-MM-DD
+  const hasta  = searchParams.get('hasta') // YYYY-MM-DD
+  const hasFilter = !!(desde || hasta)
+
+  // Compute UTC bounds for the selected range
+  let startIso: string
+  let endIso: string
+
+  if (desde && hasta) {
+    startIso = mxDayBounds(desde).start
+    endIso   = mxDayBounds(hasta).end
+  } else if (desde) {
+    startIso = mxDayBounds(desde).start
+    endIso   = new Date().toISOString()
+  } else if (hasta) {
+    endIso   = mxDayBounds(hasta).end
+    const d  = new Date(endIso)
+    d.setDate(d.getDate() - 29)
+    startIso = d.toISOString()
+  } else {
+    const since = new Date()
+    since.setDate(since.getDate() - 29)
+    since.setHours(0, 0, 0, 0)
+    startIso = since.toISOString()
+    endIso   = new Date().toISOString()
+  }
+
+  let allImagesQuery = admin.schema('lusa').from('images')
+    .select('validation_state, operator_id')
+
+  if (hasFilter) {
+    allImagesQuery = allImagesQuery
+      .gte('created_at', startIso)
+      .lte('created_at', endIso)
+  }
 
   const [{ data: recentImages }, { data: allImages }, { data: operators }] = await Promise.all([
     admin.schema('lusa').from('images')
       .select('created_at')
-      .gte('created_at', since.toISOString()),
-    admin.schema('lusa').from('images')
-      .select('validation_state, operator_id'),
-    admin.schema('lusa').from('operators')
-      .select('id, name'),
+      .gte('created_at', startIso)
+      .lte('created_at', endIso),
+    allImagesQuery,
+    admin.schema('lusa').from('operators').select('id, name'),
   ])
 
-  // byDay — last 30 days, all initialized to 0
+  // byDay — build a map of every Mexico City calendar day in the range
+  const mxFmt = new Intl.DateTimeFormat('sv', { timeZone: 'America/Mexico_City' })
   const byDayMap: Record<string, number> = {}
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date()
-    d.setDate(d.getDate() - i)
-    byDayMap[d.toISOString().slice(0, 10)] = 0
+
+  const rangeStart = new Date(startIso)
+  const rangeEnd   = new Date(endIso)
+  const cur = new Date(rangeStart)
+  let safeguard = 0
+  while (cur <= rangeEnd && safeguard < 366) {
+    byDayMap[mxFmt.format(cur)] = 0
+    cur.setDate(cur.getDate() + 1)
+    safeguard++
   }
+
   for (const img of recentImages ?? []) {
-    const day = img.created_at.slice(0, 10)
-    if (day in byDayMap) byDayMap[day]++
+    const mxDay = mxFmt.format(new Date(img.created_at))
+    if (mxDay in byDayMap) byDayMap[mxDay]++
   }
+
   const byDay = Object.entries(byDayMap).map(([date, count]) => ({
     date: date.slice(5), // MM-DD
     count,
   }))
 
-  // byState — all time
+  // byState and topRejected — scoped to the selected range (or all-time)
   const byStateMap: Record<string, number> = {}
   const opStats: Record<string, { total: number; rechazadas: number }> = {}
 

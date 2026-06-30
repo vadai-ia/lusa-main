@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -11,13 +12,16 @@ const STATE_LABELS: Record<string, string> = {
   approved:        'Aprobada',
   duplicate_clean: 'Duplicado',
   manipulated:     'Manipulada',
+  intercambiada:   'Intercambiada',
   invalid:         'Inválida',
+  invalida:        'Inválida',
 }
 
 const STATE_COLORS: Record<string, string> = {
   approved:        '#10b981',
   duplicate_clean: '#3b82f6',
   manipulated:     '#ef4444',
+  intercambiada:   '#a855f7',
   invalid:         '#9ca3af',
 }
 
@@ -26,9 +30,7 @@ function normalizeByState(raw: { state: string; count: number }[]) {
   const merged: Record<string, number> = {}
   for (const { state, count } of raw) {
     if (state === 'pending') continue
-    const key = state === 'intercambiada' ? 'manipulated'
-               : (state === 'invalida' || state === 'invalid') ? 'invalid'
-               : state
+    const key = (state === 'invalida' || state === 'invalid') ? 'invalid' : state
     merged[key] = (merged[key] ?? 0) + count
   }
   return Object.entries(merged).map(([state, count]) => ({ state, count }))
@@ -60,16 +62,27 @@ function Skeleton() {
 }
 
 export default function MetricsCharts() {
-  const [data, setData] = useState<Metrics | null>(null)
+  const [data, setData]       = useState<Metrics | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const params = useSearchParams()
+  const desde  = params.get('desde') ?? ''
+  const hasta  = params.get('hasta') ?? ''
+
   useEffect(() => {
-    fetch('/api/admin/metrics')
+    setLoading(true)
+    setData(null)
+    const q = new URLSearchParams()
+    if (desde) q.set('desde', desde)
+    if (hasta) q.set('hasta', hasta)
+    const url = `/api/admin/metrics${q.toString() ? `?${q}` : ''}`
+
+    fetch(url)
       .then(r => r.json())
       .then(setData)
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [])
+  }, [desde, hasta])
 
   if (loading) return <Skeleton />
   if (!data)   return null
@@ -77,12 +90,22 @@ export default function MetricsCharts() {
   const byState = normalizeByState(data.byState)
   const total   = byState.reduce((s, d) => s + d.count, 0)
 
+  const hasFilter   = !!(desde || hasta)
+  const rangeLabel  = hasFilter
+    ? [desde, hasta].filter(Boolean).join(' — ')
+    : 'últimos 30 días'
+  const intervalDays = data.byDay.length
+  const xInterval   = intervalDays <= 7 ? 0 : intervalDays <= 31 ? 4 : Math.ceil(intervalDays / 8)
+
   return (
     <div className="space-y-4">
 
       {/* Área: imágenes por día */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <h3 className="text-sm font-semibold text-gray-900 mb-4">Imágenes recibidas — últimos 30 días</h3>
+        <h3 className="text-sm font-semibold text-gray-900 mb-4">
+          Imágenes recibidas —{' '}
+          <span className="font-normal text-gray-400">{rangeLabel}</span>
+        </h3>
         <ResponsiveContainer width="100%" height={190}>
           <AreaChart data={data.byDay} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
             <defs>
@@ -97,7 +120,7 @@ export default function MetricsCharts() {
               tick={{ fontSize: 10, fill: '#9ca3af' }}
               tickLine={false}
               axisLine={false}
-              interval={4}
+              interval={xInterval}
             />
             <YAxis
               tick={{ fontSize: 10, fill: '#9ca3af' }}
@@ -130,7 +153,10 @@ export default function MetricsCharts() {
         {/* Donut: distribución por estado */}
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <h3 className="text-sm font-semibold text-gray-900 mb-1">Distribución por estado</h3>
-          <p className="text-xs text-gray-400 mb-4">{total.toLocaleString('es-MX')} imágenes en total</p>
+          <p className="text-xs text-gray-400 mb-4">
+            {total.toLocaleString('es-MX')} imágenes
+            {hasFilter ? ` en el período` : ' en total'}
+          </p>
           {total > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
@@ -165,7 +191,7 @@ export default function MetricsCharts() {
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-48 flex items-center justify-center text-gray-300 text-sm">Sin datos aún</div>
+            <div className="h-48 flex items-center justify-center text-gray-300 text-sm">Sin datos en este período</div>
           )}
         </div>
 

@@ -28,6 +28,7 @@ const ESTADOS = [
   { value: '',                label: 'Todas' },
   { value: 'approved',        label: 'Aprobada' },
   { value: 'duplicate_clean', label: 'Duplicada' },
+  { value: 'manipulated',     label: 'Manipulada' },
   { value: 'intercambiada',   label: 'Intercambiada' },
   { value: 'invalida',        label: 'Inválida' },
 ]

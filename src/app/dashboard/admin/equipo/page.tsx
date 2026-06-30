@@ -6,11 +6,11 @@ export default async function EquipoPage() {
 
   const [{ data: profiles }, { data: operators }] = await Promise.all([
     supabase.schema('lusa').from('profiles').select('id, email, role, full_name').order('role'),
-    supabase.schema('lusa').from('operators').select('id, user_id, phone, unit'),
+    supabase.schema('lusa').from('operators').select('id, user_id, phone, unit, is_active'),
   ])
 
   const opByUserId = Object.fromEntries(
-    (operators ?? []).map(o => [o.user_id, { id: o.id, phone: o.phone as string | null, unit: o.unit as string | null }])
+    (operators ?? []).map(o => [o.user_id, { id: o.id, phone: o.phone as string | null, unit: o.unit as string | null, is_active: o.is_active as boolean ?? true }])
   )
 
   // Conteo de imágenes por operador
@@ -26,9 +26,10 @@ export default async function EquipoPage() {
 
   const members = (profiles ?? []).map(p => ({
     ...p,
-    operator_id:  opByUserId[p.id]?.id   ?? null,
-    phone:        opByUserId[p.id]?.phone ?? null,
-    unit:         opByUserId[p.id]?.unit  ?? null,
+    operator_id:  opByUserId[p.id]?.id        ?? null,
+    phone:        opByUserId[p.id]?.phone      ?? null,
+    unit:         opByUserId[p.id]?.unit       ?? null,
+    is_active:    opByUserId[p.id]?.is_active  ?? true,
     image_count:  countByOp[opByUserId[p.id]?.id ?? ''] ?? 0,
   }))
 

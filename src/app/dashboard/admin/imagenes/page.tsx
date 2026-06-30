@@ -8,7 +8,7 @@ const STATE_STYLES: Record<string, string> = {
   approved:        'bg-emerald-100 text-emerald-700',
   duplicate_clean: 'bg-blue-100 text-blue-700',
   intercambiada:   'bg-purple-100 text-purple-700',
-  manipulated:     'bg-purple-100 text-purple-700',
+  manipulated:     'bg-red-100 text-red-700',
   invalida:        'bg-gray-100 text-gray-600',
   invalid:         'bg-gray-100 text-gray-600',
 }
@@ -17,10 +17,19 @@ const STATE_LABELS: Record<string, string> = {
   approved:        'Aprobada',
   duplicate_clean: 'Duplicada',
   intercambiada:   'Intercambiada',
-  manipulated:     'Intercambiada',
+  manipulated:     'Manipulada',
   invalida:        'Inválida',
   invalid:         'Inválida',
 }
+
+// 5 estados canónicos para el resumen (Inválida agrupa invalida + invalid)
+const SUMMARY_STATES = [
+  { key: 'approved',        label: 'Aprobada',      style: STATE_STYLES.approved        },
+  { key: 'duplicate_clean', label: 'Duplicada',      style: STATE_STYLES.duplicate_clean },
+  { key: 'manipulated',     label: 'Manipulada',     style: STATE_STYLES.manipulated     },
+  { key: 'intercambiada',   label: 'Intercambiada',  style: STATE_STYLES.intercambiada   },
+  { key: 'invalida',        label: 'Inválida',        style: STATE_STYLES.invalida        },
+]
 
 const FRAUD_LABELS: Record<string, string> = {
   cross_operator_exact:   'Copia exacta entre operadores',
@@ -47,8 +56,7 @@ export default async function ImagenesAdminPage({ searchParams }: { searchParams
     .order('created_at', { ascending: false })
     .limit(500)
 
-  if (estado === 'intercambiada') query = query.in('validation_state', ['intercambiada', 'manipulated'])
-  else if (estado === 'invalida') query = query.in('validation_state', ['invalida', 'invalid'])
+  if (estado === 'invalida')      query = query.in('validation_state', ['invalida', 'invalid'])
   else if (estado)                query = query.eq('validation_state', estado)
   if (operador) query = query.eq('operator_id', operador)
   if (dateCol === 'created_at') {
@@ -100,12 +108,14 @@ export default async function ImagenesAdminPage({ searchParams }: { searchParams
 
       {/* Resumen por estado */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        {Object.entries(STATE_LABELS).map(([state, label]) => {
-          const count = rows.filter(i => i.validation_state === state).length
+        {SUMMARY_STATES.map(({ key, label, style }) => {
+          const count = key === 'invalida'
+            ? rows.filter(i => i.validation_state === 'invalida' || i.validation_state === 'invalid').length
+            : rows.filter(i => i.validation_state === key).length
           return (
-            <div key={state} className="bg-white rounded-xl border border-gray-200 p-4 text-center">
+            <div key={key} className="bg-white rounded-xl border border-gray-200 p-4 text-center">
               <p className="text-2xl font-bold text-gray-900">{count}</p>
-              <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${STATE_STYLES[state]}`}>
+              <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${style}`}>
                 {label}
               </span>
             </div>

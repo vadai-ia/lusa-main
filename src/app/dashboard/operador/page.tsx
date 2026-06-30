@@ -7,7 +7,7 @@ const STATE_STYLES: Record<string, string> = {
   approved:        'bg-emerald-100 text-emerald-700',
   duplicate_clean: 'bg-blue-100 text-blue-700',
   intercambiada:   'bg-purple-100 text-purple-700',
-  manipulated:     'bg-purple-100 text-purple-700',
+  manipulated:     'bg-red-100 text-red-700',
   invalida:        'bg-gray-100 text-gray-600',
   invalid:         'bg-gray-100 text-gray-600',
 }
@@ -15,7 +15,7 @@ const STATE_LABELS: Record<string, string> = {
   approved:        'Aprobada',
   duplicate_clean: 'Duplicada',
   intercambiada:   'Intercambiada',
-  manipulated:     'Intercambiada',
+  manipulated:     'Manipulada',
   invalida:        'Inválida',
   invalid:         'Inválida',
 }

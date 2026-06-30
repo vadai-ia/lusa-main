@@ -12,6 +12,7 @@ type Member = {
   operator_id: string | null
   phone: string | null
   unit: string | null
+  is_active: boolean
   image_count: number
 }
 
@@ -60,10 +61,11 @@ export default function EquipoClient({ members }: { members: Member[] }) {
   const [deleteTarget, setDeleteTarget] = useState<Member | null>(null)
   const [deleting, setDeleting]         = useState(false)
   const [deleteError, setDeleteError]   = useState<string | null>(null)
-  const [editTarget, setEditTarget]     = useState<Member | null>(null)
-  const [editForm, setEditForm]         = useState<EditForm | null>(null)
-  const [editLoading, setEditLoading]   = useState(false)
-  const [editError, setEditError]       = useState<string | null>(null)
+  const [editTarget, setEditTarget]       = useState<Member | null>(null)
+  const [editForm, setEditForm]           = useState<EditForm | null>(null)
+  const [editLoading, setEditLoading]     = useState(false)
+  const [editError, setEditError]         = useState<string | null>(null)
+  const [togglingId, setTogglingId]       = useState<string | null>(null)
 
   function field(key: keyof AddForm) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -169,6 +171,21 @@ export default function EquipoClient({ members }: { members: Member[] }) {
     }
   }
 
+  async function handleToggleActive(m: Member) {
+    if (!m.operator_id) return
+    setTogglingId(m.id)
+    try {
+      const res = await fetch(`/api/admin/users/${m.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_active: !m.is_active }),
+      })
+      if (res.ok) router.refresh()
+    } finally {
+      setTogglingId(null)
+    }
+  }
+
   function initial(member: Member) {
     return (member.full_name ?? member.email).charAt(0).toUpperCase()
   }
@@ -239,13 +256,20 @@ export default function EquipoClient({ members }: { members: Member[] }) {
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 ${
-                        m.role === 'admin' ? 'bg-blue-500' : 'bg-emerald-500'
+                        !m.is_active ? 'bg-gray-300' : m.role === 'admin' ? 'bg-blue-500' : 'bg-emerald-500'
                       }`}>
                         {initial(m)}
                       </div>
-                      <span className="font-medium text-gray-900">
-                        {m.full_name ?? <span className="text-gray-400 font-normal">Sin nombre</span>}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`font-medium ${m.is_active ? 'text-gray-900' : 'text-gray-400'}`}>
+                          {m.full_name ?? <span className="text-gray-400 font-normal">Sin nombre</span>}
+                        </span>
+                        {!m.is_active && m.role === 'operador' && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500 border border-gray-200">
+                            Inactivo
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td className="px-5 py-3 text-gray-500 text-xs font-mono">
@@ -263,6 +287,23 @@ export default function EquipoClient({ members }: { members: Member[] }) {
                   </td>
                   <td className="px-5 py-3">
                     <div className="flex items-center justify-end gap-1">
+                      {/* Toggle activo/inactivo — solo operadores */}
+                      {m.role === 'operador' && (
+                        <button
+                          onClick={() => handleToggleActive(m)}
+                          disabled={togglingId === m.id}
+                          title={m.is_active ? 'Desactivar operador' : 'Activar operador'}
+                          className={`p-1.5 rounded-lg transition-colors disabled:opacity-40 ${
+                            m.is_active
+                              ? 'text-emerald-500 hover:bg-emerald-50'
+                              : 'text-gray-400 hover:bg-gray-100'
+                          }`}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.636 5.636a9 9 0 1012.728 0M12 3v9" />
+                          </svg>
+                        </button>
+                      )}
                       {/* Editar */}
                       <button
                         onClick={() => openEdit(m)}

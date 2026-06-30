@@ -6,15 +6,15 @@ import { useRouter } from 'next/navigation'
 const STATES = [
   { value: 'approved',        label: 'Aprobada',      color: 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100', active: 'bg-emerald-600 border-emerald-600 text-white' },
   { value: 'duplicate_clean', label: 'Duplicado',     color: 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100',             active: 'bg-blue-600 border-blue-600 text-white' },
+  { value: 'manipulated',     label: 'Manipulada',    color: 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100',                 active: 'bg-red-600 border-red-600 text-white' },
   { value: 'intercambiada',   label: 'Intercambiada', color: 'bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100',     active: 'bg-purple-600 border-purple-600 text-white' },
   { value: 'invalida',        label: 'Inválida',      color: 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100',             active: 'bg-gray-600 border-gray-600 text-white' },
 ]
 
 // Normaliza estados legacy para el selector
 function normalizeState(s: string): string {
-  if (s === 'manipulated') return 'intercambiada'
-  if (s === 'invalid')     return 'invalida'
-  if (s === 'pending')     return 'approved'
+  if (s === 'invalid')  return 'invalida'
+  if (s === 'pending')  return 'approved'
   return s
 }
 
@@ -33,7 +33,7 @@ export default function ImageStateForm({ imageId, currentState, currentFraudReas
   const router = useRouter()
 
   const changed     = selected !== normalizeState(currentState) || fraudReason !== (currentFraudReason ?? '')
-  const needsReason = selected === 'intercambiada' || selected === 'invalida'
+  const needsReason = selected === 'manipulated' || selected === 'intercambiada' || selected === 'invalida'
 
   async function save() {
     setLoading(true)
@@ -80,7 +80,7 @@ export default function ImageStateForm({ imageId, currentState, currentFraudReas
       {needsReason && (
         <div>
           <label className="block text-xs text-gray-500 mb-1">
-            Motivo {selected === 'intercambiada' ? '(requerido)' : '(opcional)'}
+            Motivo (opcional)
           </label>
           <input
             type="text"
