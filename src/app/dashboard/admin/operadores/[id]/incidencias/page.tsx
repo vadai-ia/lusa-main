@@ -148,7 +148,7 @@ export default async function IncidenciasPage({
                       {img.objeto_detectado || <span className="text-gray-400">—</span>}
                     </td>
                     <td className="px-5 py-3 text-gray-600 whitespace-nowrap">
-                      {new Date(img.created_at ?? img.processed_at).toLocaleString('es-MX')}
+                      {new Date(img.created_at ?? img.processed_at).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })}
                     </td>
                     <td className="px-5 py-3">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATE_STYLES[img.validation_state] ?? 'bg-gray-100 text-gray-600'}`}>

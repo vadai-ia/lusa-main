@@ -223,9 +223,9 @@ export default async function ImagenDetailPage({ params }: { params: Promise<{ i
               <Row
                 label="Recibida"
                 value={img.created_at
-                  ? new Date(img.created_at).toLocaleString('es-MX')
+                  ? new Date(img.created_at).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })
                   : img.processed_at
-                    ? new Date(img.processed_at).toLocaleString('es-MX')
+                    ? new Date(img.processed_at).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })
                     : '—'}
               />
             </dl>
@@ -359,7 +359,7 @@ function CompareCard({
         </div>
         <div className="flex gap-2">
           <dt className="text-gray-500 w-24 shrink-0">Subida</dt>
-          <dd className="text-gray-700">{fechaSubida ? new Date(fechaSubida).toLocaleString('es-MX') : '—'}</dd>
+          <dd className="text-gray-700">{fechaSubida ? new Date(fechaSubida).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }) : '—'}</dd>
         </div>
         {operadorId && (
           <div className="pt-1">

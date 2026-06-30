@@ -132,7 +132,7 @@ export default async function OperadorPage({ searchParams }: { searchParams: Sea
               {images && images.length > 0 ? images.map((img) => (
                 <tr key={img.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-5 py-3 text-gray-600 whitespace-nowrap">
-                    {new Date(img.created_at ?? img.processed_at).toLocaleString('es-MX')}
+                    {new Date(img.created_at ?? img.processed_at).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })}
                   </td>
                   <td className="px-5 py-3">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATE_STYLES[img.validation_state] ?? 'bg-gray-100 text-gray-600'}`}>

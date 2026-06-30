@@ -208,7 +208,7 @@ export default async function ImagenesAdminPage({ searchParams }: { searchParams
                     {fraudLabel(img.fraud_reason)}
                   </td>
                   <td className="px-5 py-3 text-gray-500 whitespace-nowrap">
-                    {new Date(img.created_at ?? img.processed_at).toLocaleString('es-MX')}
+                    {new Date(img.created_at ?? img.processed_at).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })}
                   </td>
                   <td className="px-5 py-3">
                     <Link

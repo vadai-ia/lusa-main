@@ -186,7 +186,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                 <tr key={img.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-5 py-3 text-gray-700 font-medium">{opMap[img.operator_id] ?? '—'}</td>
                   <td className="px-5 py-3 text-gray-500 whitespace-nowrap">
-                    {new Date(img.created_at ?? img.processed_at).toLocaleString('es-MX')}
+                    {new Date(img.created_at ?? img.processed_at).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })}
                   </td>
                   <td className="px-5 py-3">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATE_STYLES[img.validation_state] ?? 'bg-gray-100 text-gray-600'}`}>

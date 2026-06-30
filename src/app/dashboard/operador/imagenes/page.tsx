@@ -163,7 +163,7 @@ export default async function MisImagenesPage({ searchParams }: { searchParams: 
                       }
                     </td>
                     <td className="px-5 py-3 text-gray-500 whitespace-nowrap">
-                      {new Date(date).toLocaleString('es-MX')}
+                      {new Date(date).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })}
                     </td>
                     <td className="px-5 py-3">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATE_STYLES[img.validation_state] ?? 'bg-gray-100 text-gray-600'}`}>

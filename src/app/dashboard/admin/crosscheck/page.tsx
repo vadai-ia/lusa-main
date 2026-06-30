@@ -22,7 +22,7 @@ function storageUrl(supabaseUrl: string, path: string | null): string | null {
 
 function fmt(ts: string | null): string {
   if (!ts) return '—'
-  return new Date(ts).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })
+  return new Date(ts).toLocaleString('es-MX', { timeZone: 'America/Mexico_City', dateStyle: 'short', timeStyle: 'short' })
 }
 
 export default async function CrossCheckPage() {

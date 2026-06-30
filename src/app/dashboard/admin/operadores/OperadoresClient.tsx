@@ -121,7 +121,7 @@ export default function OperadoresClient({ operators }: { operators: Operator[] 
                   <td className="px-5 py-3 text-gray-500">{op.email ?? '—'}</td>
                   <td className="px-5 py-3 text-gray-500 whitespace-nowrap text-xs">
                     {op.last_image_at
-                      ? new Date(op.last_image_at).toLocaleString('es-MX')
+                      ? new Date(op.last_image_at).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })
                       : '—'}
                   </td>
                   <td className="px-5 py-3">

@@ -128,7 +128,7 @@ export default async function MiImagenDetailPage({ params }: { params: Promise<{
         <div className="flex items-center justify-between">
           <span className="text-sm text-gray-500">Fecha enviada</span>
           <span className="text-sm text-gray-700">
-            {new Date(date).toLocaleString('es-MX')}
+            {new Date(date).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })}
           </span>
         </div>
       </div>
@@ -162,7 +162,7 @@ export default async function MiImagenDetailPage({ params }: { params: Promise<{
                 </div>
                 <div className={`flex gap-1.5 ${fraudType === 'credential_sharing' ? 'bg-amber-50 rounded px-1' : ''}`}>
                   <dt className="text-gray-500 shrink-0">Subida</dt>
-                  <dd className="text-gray-700">{new Date(date).toLocaleString('es-MX')}</dd>
+                  <dd className="text-gray-700">{new Date(date).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })}</dd>
                 </div>
               </dl>
             </div>
@@ -189,7 +189,7 @@ export default async function MiImagenDetailPage({ params }: { params: Promise<{
                 </div>
                 <div className={`flex gap-1.5 ${fraudType === 'credential_sharing' ? 'bg-amber-50 rounded px-1' : ''}`}>
                   <dt className="text-gray-500 shrink-0">Subida</dt>
-                  <dd className="text-gray-700">{matchImg.created_at ? new Date(matchImg.created_at).toLocaleString('es-MX') : '—'}</dd>
+                  <dd className="text-gray-700">{matchImg.created_at ? new Date(matchImg.created_at).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }) : '—'}</dd>
                 </div>
               </dl>
             </div>
