@@ -293,15 +293,13 @@ export default function EquipoClient({ members }: { members: Member[] }) {
                           onClick={() => handleToggleActive(m)}
                           disabled={togglingId === m.id}
                           title={m.is_active ? 'Desactivar operador' : 'Activar operador'}
-                          className={`p-1.5 rounded-lg transition-colors disabled:opacity-40 ${
-                            m.is_active
-                              ? 'text-emerald-500 hover:bg-emerald-50'
-                              : 'text-gray-400 hover:bg-gray-100'
+                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:opacity-40 ${
+                            m.is_active ? 'bg-emerald-500' : 'bg-gray-300'
                           }`}
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.636 5.636a9 9 0 1012.728 0M12 3v9" />
-                          </svg>
+                          <span className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                            m.is_active ? 'translate-x-4' : 'translate-x-0'
+                          }`} />
                         </button>
                       )}
                       {/* Editar */}
