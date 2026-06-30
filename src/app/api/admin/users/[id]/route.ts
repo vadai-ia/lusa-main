@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { syncOperadorContact, removeOperadorTag, addInactivoTag, removeInactivoTag } from '@/lib/whaapy'
+import { syncOperadorContact, addOperadorTag, removeOperadorTag, addInactivoTag, removeInactivoTag } from '@/lib/whaapy'
 
 async function requireAdmin() {
   const supabase = await createClient()
@@ -113,14 +113,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   // 4b. Whaapy tags si cambió el rol
   const roleChanged = role && role !== prevProfile.role
-  if (roleChanged && prevOp?.whaapy_contact_id) {
-    if (role === 'admin') {
-      // operador → admin: quitar tag
+  if (roleChanged) {
+    if (role === 'admin' && prevOp?.whaapy_contact_id) {
+      // operador → admin: quitar tag operador
       removeOperadorTag(prevOp.whaapy_contact_id).catch(() => {})
     } else if (role === 'operador') {
-      // admin → operador: agregar tag
-      const ph = (phone || prevOp.phone || '').replace(/^\+/, '')
-      if (ph) syncOperadorContact(ph, opName).catch(() => {})
+      if (prevOp?.whaapy_contact_id) {
+        // ya tiene contacto en Whaapy — solo agregar tag
+        addOperadorTag(prevOp.whaapy_contact_id).catch(() => {})
+      } else {
+        // sin contacto — crear/buscar por teléfono y agregar tag
+        const ph = (phone || prevOp?.phone || '').replace(/^\+/, '')
+        if (ph) syncOperadorContact(ph, opName).catch(() => {})
+      }
     }
   }
 

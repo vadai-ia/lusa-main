@@ -76,21 +76,28 @@ export async function removeInactivoTag(contactId: string): Promise<void> {
   }
 }
 
-/** Quita el tag "operador" del contacto. */
-export async function removeOperadorTag(contactId: string): Promise<void> {
-  const apiKey = process.env.WHAAPY_API_KEY
-  if (!apiKey) return
-
+/** Agrega el tag "operador" al contacto. */
+export async function addOperadorTag(contactId: string): Promise<void> {
+  if (!process.env.WHAAPY_API_KEY) return
   try {
-    const res = await fetch(`${WHAAPY_BASE}/${contactId}`, { headers: headers() })
-    if (!res.ok) return
-    const data = await res.json()
-    const currentTags: string[] = data.contact?.tags ?? []
-    const newTags = currentTags.filter(t => t !== 'operador')
     await fetch(`${WHAAPY_BASE}/${contactId}`, {
       method: 'PATCH',
       headers: headers(),
-      body: JSON.stringify({ tags: newTags }),
+      body: JSON.stringify({ add_tags: ['operador'] }),
+    })
+  } catch (e) {
+    console.error('[whaapy] addOperadorTag error:', e)
+  }
+}
+
+/** Quita el tag "operador" del contacto. */
+export async function removeOperadorTag(contactId: string): Promise<void> {
+  if (!process.env.WHAAPY_API_KEY) return
+  try {
+    await fetch(`${WHAAPY_BASE}/${contactId}`, {
+      method: 'PATCH',
+      headers: headers(),
+      body: JSON.stringify({ remove_tags: ['operador'] }),
     })
   } catch (e) {
     console.error('[whaapy] removeOperadorTag error:', e)
