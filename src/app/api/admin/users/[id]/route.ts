@@ -19,7 +19,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { admin, user: adminUser } = ctx
 
   const { id: userId } = await params
-  const { full_name, email, password, role, phone, unit, is_active } = await req.json()
+  const { full_name, email, password, role, phone, unit, ruta, is_active } = await req.json()
 
   // Estado anterior
   const [{ data: prevProfile }, { data: prevOp }] = await Promise.all([
@@ -59,6 +59,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (full_name !== undefined) opUp.name = full_name || prevOp.name
     if (phone     !== undefined) opUp.phone = phone.replace(/^\+/, '')
     if (unit      !== undefined) opUp.unit  = unit || null
+    if (ruta      !== undefined) opUp.ruta  = ruta || null
 
     if (Object.keys(opUp).length > 0) {
       await admin.schema('lusa').from('operators').update(opUp).eq('id', prevOp.id)
@@ -71,6 +72,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       name:  opName,
       user_id: userId,
       unit:  unit || null,
+      ruta:  ruta || null,
       is_active: true,
     }).select('id').single()
 

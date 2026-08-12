@@ -12,6 +12,7 @@ type Member = {
   operator_id: string | null
   phone: string | null
   unit: string | null
+  ruta: string | null
   is_active: boolean
   image_count: number
 }
@@ -23,6 +24,7 @@ type EditForm = {
   role: 'admin' | 'operador'
   phone: string
   unit: string
+  ruta: string
 }
 
 type RoleFilter = 'todos' | 'admin' | 'operador'
@@ -34,6 +36,7 @@ type AddForm = {
   role: 'admin' | 'operador'
   phone: string
   unit: string
+  ruta: string
 }
 
 const EMPTY_FORM: AddForm = {
@@ -43,7 +46,10 @@ const EMPTY_FORM: AddForm = {
   role: 'operador',
   phone: '',
   unit: '',
+  ruta: '',
 }
+
+const SIN_RUTA = '__sin_ruta__'
 
 const ROLE_STYLES: Record<string, string> = {
   admin:    'bg-blue-100 text-blue-700',
@@ -66,6 +72,11 @@ export default function EquipoClient({ members }: { members: Member[] }) {
   const [editLoading, setEditLoading]     = useState(false)
   const [editError, setEditError]         = useState<string | null>(null)
   const [togglingId, setTogglingId]       = useState<string | null>(null)
+  const [rutaFilter, setRutaFilter]       = useState('')
+
+  const rutas = Array.from(
+    new Set(members.map(m => m.ruta).filter((r): r is string => !!r))
+  ).sort()
 
   function field(key: keyof AddForm) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -86,6 +97,7 @@ export default function EquipoClient({ members }: { members: Member[] }) {
       role:      m.role as 'admin' | 'operador',
       phone:     m.phone ?? '',
       unit:      m.unit  ?? '',
+      ruta:      m.ruta  ?? '',
     })
     setEditError(null)
   }
@@ -102,6 +114,7 @@ export default function EquipoClient({ members }: { members: Member[] }) {
         role:      editForm.role,
         phone:     editForm.phone,
         unit:      editForm.unit,
+        ruta:      editForm.ruta,
       }
       if (editForm.password) body.password = editForm.password
 
@@ -122,7 +135,13 @@ export default function EquipoClient({ members }: { members: Member[] }) {
     }
   }
 
-  const visible = filter === 'todos' ? members : members.filter(m => m.role === filter)
+  const byRole = filter === 'todos' ? members : members.filter(m => m.role === filter)
+
+  const visible = rutaFilter === ''
+    ? byRole
+    : rutaFilter === SIN_RUTA
+      ? byRole.filter(m => !m.ruta)
+      : byRole.filter(m => m.ruta === rutaFilter)
 
   const counts = {
     todos:    members.length,
@@ -198,21 +217,34 @@ export default function EquipoClient({ members }: { members: Member[] }) {
     <>
       {/* Filtros + botón */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg p-1">
-          {(['todos', 'admin', 'operador'] as RoleFilter[]).map(r => (
-            <button
-              key={r}
-              onClick={() => setFilter(r)}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                filter === r ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              {r.charAt(0).toUpperCase() + r.slice(1)}
-              <span className={`ml-1.5 text-xs ${filter === r ? 'text-blue-100' : 'text-gray-400'}`}>
-                {counts[r]}
-              </span>
-            </button>
-          ))}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg p-1">
+            {(['todos', 'admin', 'operador'] as RoleFilter[]).map(r => (
+              <button
+                key={r}
+                onClick={() => setFilter(r)}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  filter === r ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                {r.charAt(0).toUpperCase() + r.slice(1)}
+                <span className={`ml-1.5 text-xs ${filter === r ? 'text-blue-100' : 'text-gray-400'}`}>
+                  {counts[r]}
+                </span>
+              </button>
+            ))}
+          </div>
+          <select
+            value={rutaFilter}
+            onChange={e => setRutaFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Todas las rutas</option>
+            {rutas.map(r => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+            <option value={SIN_RUTA}>Sin ruta</option>
+          </select>
         </div>
 
         <div className="flex items-center gap-2">
@@ -245,6 +277,7 @@ export default function EquipoClient({ members }: { members: Member[] }) {
               <tr className="border-b border-gray-100 bg-gray-50">
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Miembro</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Teléfono</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Ruta</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Rol</th>
                 <th className="px-5 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">Imágenes</th>
                 <th className="px-5 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">Acciones</th>
@@ -274,6 +307,9 @@ export default function EquipoClient({ members }: { members: Member[] }) {
                   </td>
                   <td className="px-5 py-3 text-gray-500 text-xs font-mono">
                     {m.phone ? `+${m.phone}` : <span className="text-gray-300">—</span>}
+                  </td>
+                  <td className="px-5 py-3 text-gray-500">
+                    {m.ruta ?? <span className="text-gray-300">—</span>}
                   </td>
                   <td className="px-5 py-3">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${ROLE_STYLES[m.role] ?? 'bg-gray-100 text-gray-600'}`}>
@@ -329,7 +365,7 @@ export default function EquipoClient({ members }: { members: Member[] }) {
               )) : (
                 <tr>
                   <td colSpan={6} className="px-5 py-10 text-center text-gray-400">
-                    No hay miembros con ese rol
+                    {rutaFilter ? 'No hay miembros con esos filtros' : 'No hay miembros con ese rol'}
                   </td>
                 </tr>
               )}
@@ -394,6 +430,12 @@ export default function EquipoClient({ members }: { members: Member[] }) {
                       Unidad <span className="text-gray-400 font-normal">(opcional)</span>
                     </label>
                     <input type="text" value={form.unit} onChange={field('unit')} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ej. Unidad 42" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Ruta <span className="text-gray-400 font-normal">(opcional)</span>
+                    </label>
+                    <input type="text" value={form.ruta} onChange={field('ruta')} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ej. Ruta Norte" />
                   </div>
                 </>
               )}
@@ -514,6 +556,18 @@ export default function EquipoClient({ members }: { members: Member[] }) {
                       onChange={editField('unit')}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Ej. Unidad 42"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Ruta <span className="text-gray-400 font-normal">(opcional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.ruta}
+                      onChange={editField('ruta')}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Ej. Ruta Norte"
                     />
                   </div>
                 </>
