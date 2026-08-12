@@ -44,12 +44,23 @@ function fraudLabel(reason: string | null): string {
   return FRAUD_LABELS[type] ?? reason
 }
 
-type SearchParams = Promise<{ estado?: string; desde?: string; hasta?: string; tipo_fecha?: string; operador?: string }>
+const SIN_RUTA = 'sin_ruta'
+
+type SearchParams = Promise<{ estado?: string; desde?: string; hasta?: string; tipo_fecha?: string; operador?: string; ruta?: string }>
 
 export default async function ImagenesAdminPage({ searchParams }: { searchParams: SearchParams }) {
-  const { estado, desde, hasta, tipo_fecha, operador } = await searchParams
+  const { estado, desde, hasta, tipo_fecha, operador, ruta } = await searchParams
   const supabase  = await createClient()
   const dateCol   = tipo_fecha === 'foto' ? 'fecha_foto' : 'created_at'
+
+  const { data: operators, error: opError } = await supabase
+    .schema('lusa')
+    .from('operators')
+    .select('id, name, phone, unit, ruta, profiles!inner(role)')
+    .eq('profiles.role', 'operador')
+    .order('name')
+
+  if (opError) console.error('[imagenes] operators error:', opError)
 
   let query = supabase.schema('lusa').from('images')
     .select('id, operator_id, validation_state, fraud_reason, media_url, storage_path, from_phone, created_at, processed_at')
@@ -59,6 +70,12 @@ export default async function ImagenesAdminPage({ searchParams }: { searchParams
   if (estado === 'invalida')      query = query.in('validation_state', ['invalida', 'invalid'])
   else if (estado)                query = query.eq('validation_state', estado)
   if (operador) query = query.eq('operator_id', operador)
+  const rutaIds = ruta
+    ? (operators ?? [])
+        .filter(o => ruta === SIN_RUTA ? !o.ruta : o.ruta === ruta)
+        .map(o => o.id)
+    : null
+  if (rutaIds) query = query.in('operator_id', rutaIds)
   if (dateCol === 'created_at') {
     if (desde) query = query.gte('created_at', mxDayBounds(desde).start)
     if (hasta) query = query.lte('created_at', mxDayBounds(hasta).end)
@@ -67,16 +84,7 @@ export default async function ImagenesAdminPage({ searchParams }: { searchParams
     if (hasta) query = query.lte(dateCol, `${hasta}T23:59:59`)
   }
 
-  const { data: images } = await query
-
-  const { data: operators, error: opError } = await supabase
-    .schema('lusa')
-    .from('operators')
-    .select('id, name, profiles!inner(role)')
-    .eq('profiles.role', 'operador')
-    .order('name')
-
-  if (opError) console.error('[imagenes] operators error:', opError)
+  const { data: images } = rutaIds && rutaIds.length === 0 ? { data: [] } : await query
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 
@@ -93,6 +101,7 @@ export default async function ImagenesAdminPage({ searchParams }: { searchParams
     const q = new URLSearchParams({ format })
     if (estado)     q.set('estado', estado)
     if (operador)   q.set('operador', operador)
+    if (ruta)       q.set('ruta', ruta)
     if (desde)      q.set('desde', desde)
     if (hasta)      q.set('hasta', hasta)
     if (tipo_fecha) q.set('tipo_fecha', tipo_fecha)
@@ -124,7 +133,11 @@ export default async function ImagenesAdminPage({ searchParams }: { searchParams
       </div>
 
       {/* Filtros */}
-      <ImagenesFilters total={rows.length} operators={operators ?? []} />
+      <ImagenesFilters
+        total={rows.length}
+        operators={operators ?? []}
+        rutas={Array.from(new Set((operators ?? []).map(o => o.ruta).filter((r): r is string => !!r))).sort()}
+      />
 
       {/* Tabla */}
       <div className="bg-white rounded-xl border border-gray-200">
@@ -172,6 +185,7 @@ export default async function ImagenesAdminPage({ searchParams }: { searchParams
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Operador</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Teléfono</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Unidad</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Ruta</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Estado</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Motivo</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Fecha</th>
@@ -199,6 +213,9 @@ export default async function ImagenesAdminPage({ searchParams }: { searchParams
                   <td className="px-5 py-3 text-gray-500">
                     {img.operator?.unit ?? '—'}
                   </td>
+                  <td className="px-5 py-3 text-gray-500">
+                    {img.operator?.ruta ?? '—'}
+                  </td>
                   <td className="px-5 py-3">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATE_STYLES[img.validation_state] ?? 'bg-gray-100 text-gray-600'}`}>
                       {STATE_LABELS[img.validation_state] ?? img.validation_state}
@@ -221,7 +238,7 @@ export default async function ImagenesAdminPage({ searchParams }: { searchParams
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan={8} className="px-5 py-10 text-center text-gray-400">
+                  <td colSpan={9} className="px-5 py-10 text-center text-gray-400">
                     No hay imágenes con esos filtros
                   </td>
                 </tr>

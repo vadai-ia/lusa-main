@@ -54,7 +54,9 @@ const selectActive = [
   'bg-[#20F9E7]/10 border-[#20F9E7] text-[#202E0B] font-semibold',
 ].join(' ')
 
-export default function ImagenesFilters({ total, operators }: { total: number; operators: Operator[] }) {
+const SIN_RUTA = 'sin_ruta'
+
+export default function ImagenesFilters({ total, operators, rutas = [] }: { total: number; operators: Operator[]; rutas?: string[] }) {
   const router   = useRouter()
   const pathname = usePathname()
   const params   = useSearchParams()
@@ -64,6 +66,7 @@ export default function ImagenesFilters({ total, operators }: { total: number; o
   const hasta      = params.get('hasta')      ?? ''
   const tipo_fecha = params.get('tipo_fecha') ?? 'subida'
   const operador   = params.get('operador')   ?? ''
+  const ruta       = params.get('ruta')       ?? ''
   const periodo    = params.get('periodo')    ?? ''
 
   const [search, setSearch] = useState('')
@@ -101,7 +104,7 @@ export default function ImagenesFilters({ total, operators }: { total: number; o
   }
 
   const clearAll   = () => router.push(pathname)
-  const hasFilters = !!(estado || desde || hasta || tipo_fecha !== 'subida' || operador)
+  const hasFilters = !!(estado || desde || hasta || tipo_fecha !== 'subida' || operador || ruta)
 
   function selectOperator(id: string) {
     update({ operador: id }); setOpen(false); setSearch('')
@@ -209,6 +212,28 @@ export default function ImagenesFilters({ total, operators }: { total: number; o
       )}
 
       <div className="w-px h-5 bg-gray-200 shrink-0" />
+
+      {/* Ruta */}
+      {rutas.length > 0 && (
+        <>
+          <div className="relative">
+            <select
+              value={ruta}
+              onChange={e => update({ ruta: e.target.value })}
+              className={ruta ? selectActive : selectBase}
+              style={{ backgroundImage: chevron, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
+            >
+              <option value="">Ruta</option>
+              {rutas.map(r => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+              <option value={SIN_RUTA}>Sin ruta</option>
+            </select>
+          </div>
+
+          <div className="w-px h-5 bg-gray-200 shrink-0" />
+        </>
+      )}
 
       {/* Periodo — select rápido + DateRangePicker */}
       <div className="relative">

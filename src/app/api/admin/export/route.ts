@@ -27,36 +27,46 @@ export async function GET(req: NextRequest) {
   const desde      = searchParams.get('desde')
   const hasta      = searchParams.get('hasta')
   const tipo_fecha = searchParams.get('tipo_fecha')
+  const operador   = searchParams.get('operador')
+  const ruta       = searchParams.get('ruta')
   const dateCol    = tipo_fecha === 'foto' ? 'fecha_foto' : 'created_at'
 
   const admin = createAdminClient()
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 
+  const { data: operators } = await admin.schema('lusa').from('operators').select('id, name, phone, unit, ruta')
+
   let query = admin.schema('lusa').from('images')
     .select('id, operator_id, from_phone, validation_state, fraud_reason, created_at, fecha_foto, objeto_detectado, direccion, rumbo, velocidad_kmh, latitud, longitud, operador_overlay, unidad_overlay, ocr_text, md5_hash, phash, storage_path')
     .order('created_at', { ascending: false })
     .limit(10000)
 
-  if (estado) query = query.eq('validation_state', estado)
+  if (estado === 'invalida') query = query.in('validation_state', ['invalida', 'invalid'])
+  else if (estado)           query = query.eq('validation_state', estado)
+  if (operador) query = query.eq('operator_id', operador)
+  const rutaIds = ruta
+    ? (operators ?? [])
+        .filter(o => ruta === 'sin_ruta' ? !o.ruta : o.ruta === ruta)
+        .map(o => o.id)
+    : null
+  if (rutaIds) query = query.in('operator_id', rutaIds)
   if (desde)  query = query.gte(dateCol, `${desde}T00:00:00`)
   if (hasta)  query = query.lte(dateCol, `${hasta}T23:59:59`)
 
-  const [{ data: images }, { data: operators }] = await Promise.all([
-    query,
-    admin.schema('lusa').from('operators').select('id, name, phone, unit'),
-  ])
+  const { data: images } = rutaIds && rutaIds.length === 0 ? { data: [] } : await query
 
   const opMap = Object.fromEntries((operators ?? []).map(o => [o.id, o]))
 
   type Row = Record<string, string | number | null>
   const rows: Row[] = (images ?? []).map(img => {
-    const op = opMap[img.operator_id] as { name: string; phone: string; unit: string } | undefined
+    const op = opMap[img.operator_id] as { name: string; phone: string; unit: string; ruta: string | null } | undefined
     return {
       'ID':               img.id,
       'Operador':         op?.name ?? img.operador_overlay ?? '',
       'Teléfono':         op?.phone ?? img.from_phone ?? '',
       'Unidad':           op?.unit ?? img.unidad_overlay ?? '',
+      'Ruta':             op?.ruta ?? '',
       'Estado':           STATE_LABELS[img.validation_state] ?? img.validation_state,
       'Motivo fraude':    img.fraud_reason ?? '',
       'Fecha recepción':  img.created_at ? new Date(img.created_at).toLocaleString('es-MX') : '',
@@ -88,9 +98,11 @@ export async function GET(req: NextRequest) {
     old_fraud_reason: null,
     new_fraud_reason: [
       format.toUpperCase(),
-      estado   ? `estado:${estado}`   : null,
-      desde    ? `desde:${desde}`     : null,
-      hasta    ? `hasta:${hasta}`     : null,
+      estado   ? `estado:${estado}`     : null,
+      operador ? `operador:${operador}` : null,
+      ruta     ? `ruta:${ruta}`         : null,
+      desde    ? `desde:${desde}`       : null,
+      hasta    ? `hasta:${hasta}`       : null,
       `${rows.length} registros`,
     ].filter(Boolean).join(' / '),
   })
