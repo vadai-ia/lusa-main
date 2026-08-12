@@ -9,6 +9,7 @@ type Operator = {
   name: string
   phone: string
   unit: string | null
+  ruta: string | null
   is_active: boolean
   user_id: string | null
   email: string | null
@@ -22,9 +23,12 @@ type AddForm = {
   password: string
   phone: string
   unit: string
+  ruta: string
 }
 
-const EMPTY_FORM: AddForm = { full_name: '', email: '', password: '', phone: '', unit: '' }
+const EMPTY_FORM: AddForm = { full_name: '', email: '', password: '', phone: '', unit: '', ruta: '' }
+
+const SIN_RUTA = '__sin_ruta__'
 
 export default function OperadoresClient({ operators }: { operators: Operator[] }) {
   const router = useRouter()
@@ -34,6 +38,17 @@ export default function OperadoresClient({ operators }: { operators: Operator[] 
   const [form, setForm] = useState<AddForm>(EMPTY_FORM)
   const [addLoading, setAddLoading] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
+  const [rutaFilter, setRutaFilter] = useState('')
+
+  const rutas = Array.from(
+    new Set(operators.map(op => op.ruta).filter((r): r is string => !!r))
+  ).sort()
+
+  const filtered = rutaFilter === ''
+    ? operators
+    : rutaFilter === SIN_RUTA
+      ? operators.filter(op => !op.ruta)
+      : operators.filter(op => op.ruta === rutaFilter)
 
   function field(key: keyof AddForm) {
     return (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -78,8 +93,19 @@ export default function OperadoresClient({ operators }: { operators: Operator[] 
 
   return (
     <>
-      {/* Botón agregar */}
-      <div className="flex justify-end">
+      {/* Filtro por ruta + botón agregar */}
+      <div className="flex items-center justify-between gap-3">
+        <select
+          value={rutaFilter}
+          onChange={e => setRutaFilter(e.target.value)}
+          className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Todas las rutas</option>
+          {rutas.map(r => (
+            <option key={r} value={r}>{r}</option>
+          ))}
+          <option value={SIN_RUTA}>Sin ruta</option>
+        </select>
         <button
           onClick={() => { setShowModal(true); setAddError(null) }}
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
@@ -101,6 +127,7 @@ export default function OperadoresClient({ operators }: { operators: Operator[] 
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Teléfono</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Incidencias</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Unidad</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Ruta</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Email</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Última foto</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Estado</th>
@@ -108,7 +135,7 @@ export default function OperadoresClient({ operators }: { operators: Operator[] 
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {operators.length > 0 ? operators.map((op) => (
+              {filtered.length > 0 ? filtered.map((op) => (
                 <tr key={op.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-5 py-3 font-medium text-gray-900">{op.name}</td>
                   <td className="px-5 py-3 text-gray-500 whitespace-nowrap">{op.phone}</td>
@@ -118,6 +145,7 @@ export default function OperadoresClient({ operators }: { operators: Operator[] 
                     </span>
                   </td>
                   <td className="px-5 py-3 text-gray-500">{op.unit ?? '—'}</td>
+                  <td className="px-5 py-3 text-gray-500">{op.ruta ?? '—'}</td>
                   <td className="px-5 py-3 text-gray-500">{op.email ?? '—'}</td>
                   <td className="px-5 py-3 text-gray-500 whitespace-nowrap text-xs">
                     {op.last_image_at
@@ -176,8 +204,8 @@ export default function OperadoresClient({ operators }: { operators: Operator[] 
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan={8} className="px-5 py-10 text-center text-gray-400">
-                    No hay operadores registrados aún
+                  <td colSpan={9} className="px-5 py-10 text-center text-gray-400">
+                    {rutaFilter ? 'No hay operadores para esta ruta' : 'No hay operadores registrados aún'}
                   </td>
                 </tr>
               )}
@@ -268,6 +296,19 @@ export default function OperadoresClient({ operators }: { operators: Operator[] 
                   onChange={field('unit')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Ej. Unidad 42"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Ruta <span className="text-gray-400 font-normal">(opcional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={form.ruta}
+                  onChange={field('ruta')}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Ej. Ruta Norte"
                 />
               </div>
 

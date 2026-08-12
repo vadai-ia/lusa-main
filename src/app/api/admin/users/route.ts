@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden: Admin only' }, { status: 403 })
   }
 
-  const { email, password, role, full_name, phone, unit } = await req.json()
+  const { email, password, role, full_name, phone, unit, ruta } = await req.json()
 
   if (!email || !password || !role) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
       name: opName,
       user_id: newUser.user.id,
       unit: unit || null,
+      ruta: ruta || null,
       is_active: true,
     }).select('id').single()
 

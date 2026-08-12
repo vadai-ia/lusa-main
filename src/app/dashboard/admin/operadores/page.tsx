@@ -6,7 +6,7 @@ export default async function OperadoresPage() {
 
   const [{ data: operators }, { data: profiles }, { data: images }] = await Promise.all([
     supabase.schema('lusa').from('operators')
-      .select('id, name, phone, unit, is_active, user_id, last_image_at')
+      .select('id, name, phone, unit, ruta, is_active, user_id, last_image_at')
       .order('name'),
     supabase.schema('lusa').from('profiles')
       .select('id, email')

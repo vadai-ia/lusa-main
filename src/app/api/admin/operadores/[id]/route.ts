@@ -20,11 +20,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params
   const body = await req.json()
-  const { name, phone, unit, is_active } = body
+  const { name, phone, unit, ruta, is_active } = body
 
   // Leer estado anterior para el log
   const { data: before } = await supabase.schema('lusa').from('operators')
-    .select('name, phone, unit, is_active')
+    .select('name, phone, unit, ruta, is_active')
     .eq('id', id)
     .single()
 
@@ -32,6 +32,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (name      !== undefined) updates.name      = name
   if (phone     !== undefined) updates.phone     = phone
   if (unit      !== undefined) updates.unit      = unit || null
+  if (ruta      !== undefined) updates.ruta      = ruta || null
   if (is_active !== undefined) updates.is_active = is_active
 
   const { error } = await supabase.schema('lusa').from('operators')
@@ -45,7 +46,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     user_id:          user.id,
     user_email:       user.email!,
     action:           'editar_contacto',
-    old_state:        before ? JSON.stringify({ name: before.name, phone: before.phone, unit: before.unit, is_active: before.is_active }) : null,
+    old_state:        before ? JSON.stringify({ name: before.name, phone: before.phone, unit: before.unit, ruta: before.ruta, is_active: before.is_active }) : null,
     new_state:        JSON.stringify(updates),
     old_fraud_reason: before?.name ?? null,
     new_fraud_reason: null,

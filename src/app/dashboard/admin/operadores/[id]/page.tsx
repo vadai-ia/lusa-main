@@ -9,7 +9,7 @@ export default async function OperadorDetailPage({ params }: { params: Promise<{
 
   const [{ data: op }, { data: images }] = await Promise.all([
     supabase.schema('lusa').from('operators')
-      .select('id, name, phone, unit, is_active, user_id')
+      .select('id, name, phone, unit, ruta, is_active, user_id')
       .eq('id', id)
       .single(),
     supabase.schema('lusa').from('images')
@@ -82,6 +82,7 @@ export default async function OperadorDetailPage({ params }: { params: Promise<{
               name: op.name,
               phone: op.phone,
               unit: op.unit ?? '',
+              ruta: op.ruta ?? '',
               is_active: op.is_active,
             }}
           />
